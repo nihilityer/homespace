@@ -1,0 +1,120 @@
+[package]
+name = "homespace"
+version = "0.1.0"
+edition = "2024"
+
+[[bin]]
+name = "homespace"
+path = "src/main.rs"
+
+[dependencies]
+clap = { version = "4", features = ["derive"] }
+serde = { version = "1", features = ["derive"] }
+serde_yaml = "0.9"
+serde_json = "1"
+dialoguer = "0.12"
+toml = "1"
+anyhow = "1.0"
+rand = "0.10"
+tracing = "0.1"
+tracing-subscriber = "0.3"
+sha1 = "0.10"
+base64 = "0.22"
+
+[lints.rust]
+# 所有公开类型、函数、模块必须有文档注释
+missing_docs = "deny"
+# 禁止死代码，所有代码必须被调用或被公共 API 引用
+dead_code = "deny"
+# 禁止使用 unsafe 代码块，除非通过 #[allow(unsafe_code)] 明确放行
+unsafe_code = "deny"
+# 禁止未使用的导入项，保持 use 区域干净
+unused_imports = "deny"
+# 禁止未使用的变量，用 _ 前缀可以豁免
+unused_variables = "deny"
+# 禁止忽略 #[must_use] 类型的返回值，防止忘记处理 Result、Future 等
+unused_must_use = "deny"
+# 建议公开类型实现 Copy trait，减少不必要的克隆
+missing_copy_implementations = "warn"
+# 建议公开类型实现 Debug trait，方便调试和日志输出
+missing_debug_implementations = "warn"
+# 要求显式写出生命周期参数，避免隐式省略造成歧义
+elided_lifetimes_in_paths = "warn"
+# 枚举变体大小差异过大会影响性能，给出警告以便优化设计
+variant_size_differences = "warn"
+# 禁止使用 let _ = 吞并具有 Drop 实现的类型（导致不可控析构时机）
+let_underscore_drop = "deny"
+
+[lints.clippy]
+# --- 禁止的危险操作（强制） ---
+# 禁止使用 unwrap()，必须用 ? 或 expect("说明") 代替
+unwrap_used = "deny"
+# 禁止使用 expect()，与 unwrap 一样需用更安全的方式处理错误
+expect_used = "deny"
+# 禁止使用 panic!()，统一使用 anyhow::bail!() 或 Result::Err
+panic = "deny"
+# 禁止使用 t-o-d-o-!()，未完成功能不能进入生产代码
+todo = "deny"
+# 禁止使用 unimplemented!()，理由同上
+unimplemented = "deny"
+# 禁止使用 println!()，统一使用 tracing 日志
+print_stdout = "deny"
+# 禁止使用 eprintln!()，统一使用 tracing 日志
+print_stderr = "deny"
+# 禁止使用 dbg!()，使用 tracing::debug!() 代替
+dbg_macro = "deny"
+# 禁止使用 foo/mod.rs 形式的模块文件，强制使用 foo.rs
+mod_module_files = "deny"
+# 禁止使用 let _ = 吞并 #[must_use] 类型（如 Result）的返回值
+let_underscore_must_use = "deny"
+missing_docs_in_private_items = "deny"
+
+# --- 文档完整性（强制） ---
+# unsafe 函数必须在文档中包含 # Safety 说明
+missing_safety_doc = "deny"
+
+# --- 文档质量（警告） ---
+# 返回 Result 的公开函数应在文档中写明 # Errors 部分
+missing_errors_doc = "warn"
+# 可能 panic 的公开函数应在文档中写明 # Panics 部分
+missing_panics_doc = "warn"
+# 文档中的标识符未用反引号包裹，可能误解为普通文本
+doc_markdown = "warn"
+
+# --- 性能与正确性（警告） ---
+# 不必要地按值传递参数，影响性能（建议改为引用）
+needless_pass_by_value = "warn"
+# 对 Copy 类型调用 .clone()，冗余操作
+clone_on_copy = "warn"
+# 无副作用的纯函数应标记 #[must_use]，提醒调用者使用返回值
+must_use_candidate = "warn"
+# 可以声明为 const 的函数，建议添加 const 关键字
+missing_const_for_fn = "warn"
+
+# --- 代码风格与可读性（警告） ---
+# 未使用 pub(crate) 而用了 pub，限制了可见性范围
+redundant_pub_crate = "warn"
+# 在 impl 块内建议使用 Self 关键字代替具体类型名
+use_self = "warn"
+# 最后的表达式没有返回有意义的值时，应使用分号结尾
+semicolon_if_nothing_returned = "warn"
+# 如果 if 块中只有否定条件，可能可以优化逻辑
+if_not_else = "warn"
+# 使用 b"..." 字节字符串代替 str.as_bytes()
+string_lit_as_bytes = "warn"
+# 模块名与文件名重复，容易造成混淆
+module_inception = "warn"
+
+# --- 类型转换安全（警告） ---
+# 可以用 from() 代替无损失的 as 转换
+cast_lossless = "warn"
+# 类型转换可能截断数据，需检查是否安全
+cast_possible_truncation = "warn"
+# 有符号到无符号的转换可能丢失符号，需注意
+cast_sign_loss = "warn"
+
+# --- 复杂度控制（警告） ---
+# 函数参数过多，建议重构（默认阈值7个）
+too_many_arguments = "warn"
+# 圈复杂度过高，建议简化逻辑（默认阈值25）
+cognitive_complexity = "warn"
