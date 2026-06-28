@@ -54,11 +54,15 @@ pub fn scan_apps(config: &Config) -> anyhow::Result<Vec<App>> {
         }
     }
 
-    // 排序：infra 优先，其余按名称排序
+    // 排序：traefik / postgres 优先，其余按名称排序
     apps.sort_by(|a, b| {
-        if a.name == "infra" {
-            std::cmp::Ordering::Less
-        } else if b.name == "infra" {
+        if a.name == TRAEFIK_DIR || a.name == POSTGRES_DIR {
+            if b.name == TRAEFIK_DIR || b.name == POSTGRES_DIR {
+                a.name.cmp(&b.name)
+            } else {
+                std::cmp::Ordering::Less
+            }
+        } else if b.name == TRAEFIK_DIR || b.name == POSTGRES_DIR {
             std::cmp::Ordering::Greater
         } else {
             a.name.cmp(&b.name)

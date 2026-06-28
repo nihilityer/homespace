@@ -182,9 +182,9 @@ fn build_traefik_compose(_icfg: &InfraConfig) -> anyhow::Result<DockerCompose> {
     networks.insert(
         NETWORK_TRAEFIK.into(),
         ComposeNetwork {
-            external: None,
+            external: Some(true),
             name: Some(NETWORK_TRAEFIK.into()),
-            driver: Some("bridge".into()),
+            driver: None,
         },
     );
 
@@ -384,9 +384,9 @@ fn build_postgres_compose() -> anyhow::Result<DockerCompose> {
     networks.insert(
         NETWORK_POSTGRES.into(),
         ComposeNetwork {
-            external: None,
+            external: Some(true),
             name: Some(NETWORK_POSTGRES.into()),
-            driver: Some("bridge".into()),
+            driver: None,
         },
     );
 

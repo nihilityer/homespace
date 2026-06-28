@@ -130,16 +130,20 @@ impl Config {
         self.shared_resources.remove(name).is_some()
     }
 
-    /// infra 的 docker-compose.yml 路径
-    pub fn infra_compose_path(&self) -> PathBuf {
-        self.paths.apps_root.join(INFRA_DIR).join(COMPOSE_FILE)
+    /// Traefik 的 docker-compose.yml 路径
+    pub fn traefik_compose_path(&self) -> PathBuf {
+        self.paths.apps_root.join(TRAEFIK_DIR).join(COMPOSE_FILE)
     }
 
-    /// infra PostgreSQL 的 .env 路径
-    pub fn infra_env_path(&self) -> PathBuf {
+    /// PostgreSQL 的 docker-compose.yml 路径
+    pub fn postgres_compose_path(&self) -> PathBuf {
+        self.paths.apps_root.join(POSTGRES_DIR).join(COMPOSE_FILE)
+    }
+
+    /// PostgreSQL 的 .env 路径
+    pub fn postgres_env_path(&self) -> PathBuf {
         self.paths
             .apps_root
-            .join(INFRA_DIR)
             .join(POSTGRES_DIR)
             .join(ENV_FILE)
     }

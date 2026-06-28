@@ -190,12 +190,12 @@ pub fn run(config: &Config, commit: bool, no_git: bool, start: bool) -> anyhow::
                 info!("\n🗄️  创建数据库...");
                 let password = database::generate_password(20);
                 let admin_user =
-                    database::read_infra_pg_user(&config.infra_env_path()).unwrap_or_else(|_| {
+                    database::read_infra_pg_user(&config.postgres_env_path()).unwrap_or_else(|_| {
                         "admin".to_string()
                     });
                 let admin_password =
-                    database::read_infra_pg_password(&config.infra_env_path())?;
-                let admin_db = database::read_infra_pg_db(&config.infra_env_path());
+                    database::read_infra_pg_password(&config.postgres_env_path())?;
+                let admin_db = database::read_infra_pg_db(&config.postgres_env_path());
 
                 database::create_database_and_user(
                     db_name,

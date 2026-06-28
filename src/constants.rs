@@ -13,8 +13,6 @@ pub const CONTAINER_TRAEFIK: &str = "traefik";
 pub const CONTAINER_POSTGRES: &str = "postgres";
 
 // ── 目录 ──
-/// infra 基础设施目录
-pub const INFRA_DIR: &str = "infra";
 /// Traefik 配置目录
 pub const TRAEFIK_DIR: &str = "traefik";
 /// `PostgreSQL` 数据目录

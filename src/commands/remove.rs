@@ -24,10 +24,10 @@ pub fn run(
         .find(|a| a.name == app_name)
         .ok_or_else(|| anyhow::anyhow!("未找到应用: {}", app_name))?;
 
-    // 保护 infra
-    if app.name == "infra" {
+    // 保护基础设施
+    if app.name == TRAEFIK_DIR || app.name == POSTGRES_DIR {
         let confirm = Confirm::new()
-            .with_prompt("⚠️  你正在尝试移除 infra 基础设施！确认继续?")
+            .with_prompt(format!("⚠️  你正在尝试移除 {} 基础设施！确认继续?", app.name))
             .default(false)
             .interact()?;
         if !confirm {
@@ -133,13 +133,13 @@ pub fn run(
 
             if drop_db {
                 let admin_user =
-                    database::read_infra_pg_user(&config.infra_env_path()).unwrap_or_else(|_| {
+                    database::read_infra_pg_user(&config.postgres_env_path()).unwrap_or_else(|_| {
                         "admin".to_string()
                     });
                 let admin_password =
-                    database::read_infra_pg_password(&config.infra_env_path())
+                    database::read_infra_pg_password(&config.postgres_env_path())
                         .unwrap_or_default();
-                let admin_db = database::read_infra_pg_db(&config.infra_env_path());
+                let admin_db = database::read_infra_pg_db(&config.postgres_env_path());
 
                 if !admin_password.is_empty() {
                     database::drop_database_and_user(

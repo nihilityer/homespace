@@ -41,7 +41,7 @@ pub fn run(config: &Config) -> anyhow::Result<()> {
 
     // SSL 证书检查
     info!("\nSSL 证书: ");
-    let ssl_path = config.paths.apps_root.join(INFRA_DIR).join(SSL_DIR);
+    let ssl_path = config.paths.apps_root.join(TRAEFIK_DIR).join(SSL_DIR);
     if ssl_path.exists() {
         info!("  证书目录: {} ✅", ssl_path.display());
         // 检查 acme.json
@@ -56,16 +56,16 @@ pub fn run(config: &Config) -> anyhow::Result<()> {
         info!("  ⚠️  证书目录未找到: {}", ssl_path.display());
     }
 
-    // 检查 infra compose 文件
-    let infra_compose = config.infra_compose_path();
-    info!("\ninfra docker-compose.yml: {}", infra_compose.display());
-    if infra_compose.exists() {
+    // 检查 Traefik compose 文件
+    let traefik_compose = config.traefik_compose_path();
+    info!("\nTraefik docker-compose.yml: {}", traefik_compose.display());
+    if traefik_compose.exists() {
         info!("  ✅ 文件存在");
 
         // 尝试获取 infra 容器状态
         if let Ok(output) = std::process::Command::new("docker")
             .args(["compose", "-f"])
-            .arg(&infra_compose)
+            .arg(&traefik_compose)
             .args(["ps", "--format", "table {{.Name}}\t{{.Status}}"])
             .output()
         {

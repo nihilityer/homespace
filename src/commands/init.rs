@@ -51,8 +51,8 @@ pub fn run() -> anyhow::Result<()> {
     // 步骤 3：基础设施设置
     info!("\n━━━ 基础设施初始化 ━━━\n");
 
-    let infra_exists = config.infra_compose_path().exists()
-        || config.paths.apps_root.join(INFRA_DIR).join(TRAEFIK_DIR).join(COMPOSE_FILE).exists();
+    let infra_exists = config.traefik_compose_path().exists()
+        || config.postgres_compose_path().exists();
 
     if infra_exists {
         info!("  ✅ infra 目录已存在，跳过基础设施生成。");
@@ -89,11 +89,11 @@ pub fn run() -> anyhow::Result<()> {
             info!("\n📁 生成基础设施文件...");
             infra_generator::generate_infra(&infra_cfg)?;
 
-            info!("  ✅ {}/{}/{}", INFRA_DIR, TRAEFIK_DIR, COMPOSE_FILE);
-            info!("  ✅ {}/{}/{}", INFRA_DIR, TRAEFIK_DIR, ENV_FILE);
-            info!("  ✅ {}/{}/{}/{}", INFRA_DIR, TRAEFIK_DIR, CONFIG_DIR, TLS_CONFIG_FILE);
-            info!("  ✅ {}/{}/{}", INFRA_DIR, POSTGRES_DIR, COMPOSE_FILE);
-            info!("  ✅ {}/{}/{}", INFRA_DIR, POSTGRES_DIR, ENV_FILE);
+            info!("  ✅ {}/{}", TRAEFIK_DIR, COMPOSE_FILE);
+            info!("  ✅ {}/{}", TRAEFIK_DIR, ENV_FILE);
+            info!("  ✅ {}/{}/{}", TRAEFIK_DIR, CONFIG_DIR, TLS_CONFIG_FILE);
+            info!("  ✅ {}/{}", POSTGRES_DIR, COMPOSE_FILE);
+            info!("  ✅ {}/{}", POSTGRES_DIR, ENV_FILE);
 
             // 创建 Docker 网络
             info!("\n🌐 创建 Docker 网络...");
@@ -108,8 +108,9 @@ pub fn run() -> anyhow::Result<()> {
 
             // Git 操作
             if git::is_git_repo(&config.paths.apps_root) {
-                git::git_add(&config.paths.apps_root, &config.paths.apps_root.join(INFRA_DIR))?;
-                info!("  ✅ git add {}/", INFRA_DIR);
+                git::git_add(&config.paths.apps_root, &config.paths.apps_root.join(TRAEFIK_DIR))?;
+                git::git_add(&config.paths.apps_root, &config.paths.apps_root.join(POSTGRES_DIR))?;
+                info!("  ✅ git add {}/ {}/", TRAEFIK_DIR, POSTGRES_DIR);
             }
 
             // 询问是否启动
@@ -122,13 +123,13 @@ pub fn run() -> anyhow::Result<()> {
                 info!("\n🚀 启动基础设施...");
 
                 // 先启动 PostgreSQL（Traefik 依赖其网络）
-                let pg_dir = config.paths.apps_root.join(INFRA_DIR).join(POSTGRES_DIR);
+                let pg_dir = config.paths.apps_root.join(POSTGRES_DIR);
                 info!("  启动 PostgreSQL...");
                 docker::compose_up(&pg_dir)?;
                 info!("  ✅ PostgreSQL 已启动");
 
                 // 启动 Traefik
-                let tr_dir = config.paths.apps_root.join(INFRA_DIR).join(TRAEFIK_DIR);
+                let tr_dir = config.paths.apps_root.join(TRAEFIK_DIR);
                 info!("  启动 Traefik...");
                 docker::compose_up(&tr_dir)?;
                 info!("  ✅ Traefik 已启动");
@@ -137,8 +138,8 @@ pub fn run() -> anyhow::Result<()> {
                 info!("  🗄️  PostgreSQL: localhost:5433");
             } else {
                 info!("\n  稍后手动启动:");
-                info!("    cd {} && docker compose up -d", config.paths.apps_root.join(INFRA_DIR).join(POSTGRES_DIR).display());
-                info!("    cd {} && docker compose up -d", config.paths.apps_root.join(INFRA_DIR).join(TRAEFIK_DIR).display());
+                info!("    cd {} && docker compose up -d", config.postgres_compose_path().parent().unwrap_or(&config.paths.apps_root).display());
+                info!("    cd {} && docker compose up -d", config.traefik_compose_path().parent().unwrap_or(&config.paths.apps_root).display());
             }
         } else {
             info!("  ⚠️  跳过基础设施初始化。");
@@ -270,7 +271,7 @@ fn collect_infra_config(domain: &str, config: &Config) -> anyhow::Result<InfraCo
         pg_user,
         pg_password,
         pg_db,
-        infra_path: config.paths.apps_root.join(INFRA_DIR),
+        infra_path: config.paths.apps_root.clone(),
         timezone,
         dashboard_user: None,
     })
