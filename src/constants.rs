@@ -42,6 +42,14 @@ pub const USERS_FILE: &str = "users.txt";
 /// TLS 配置文件名
 pub const TLS_CONFIG_FILE: &str = "tls.toml";
 
+// ── 静态站点 ──
+/// Nginx 静态站点目录
+pub const NGINX_SITE_DIR: &str = "site";
+/// Nginx 配置文件名
+pub const NGINX_CONF_FILE: &str = "nginx.conf";
+/// 静态站点默认 nginx 镜像
+pub const NGINX_IMAGE: &str = "nginx:alpine";
+
 // ── homespace 配置 ──
 /// homespace 配置目录
 pub const HOMESPACE_CONFIG_DIR: &str = ".config/homespace";

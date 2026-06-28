@@ -67,9 +67,6 @@ pub fn run(app_name: &str, config: &Config) -> anyhow::Result<()> {
                     route.path_prefix.as_deref().unwrap_or("")
                 );
                 info!("  │    - {}", url);
-                if route.tls {
-                    info!("  │      (TLS 启用)");
-                }
             }
         }
 

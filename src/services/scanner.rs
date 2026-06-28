@@ -235,7 +235,6 @@ fn parse_traefik_routes(svc: &ComposeService, _app_name: &str) -> Vec<TraefikRou
         // 查找所有 traefik.http.routers.<name>.rule=Host(...) 标签
         let mut router_hosts: HashMap<String, String> = HashMap::new();
         let mut router_paths: HashMap<String, String> = HashMap::new();
-        let mut router_tls: HashMap<String, bool> = HashMap::new();
 
         for label in labels {
             let label = label.trim();
@@ -266,9 +265,6 @@ fn parse_traefik_routes(svc: &ComposeService, _app_name: &str) -> Vec<TraefikRou
                                     .insert(router_name.to_string(), path);
                             }
                         }
-                        "tls" => {
-                            router_tls.insert(router_name.to_string(), value == "true");
-                        }
                         _ => {}
                     }
                 }
@@ -284,7 +280,6 @@ fn parse_traefik_routes(svc: &ComposeService, _app_name: &str) -> Vec<TraefikRou
             routes.push(TraefikRoute {
                 subdomain: host.clone(),
                 path_prefix: router_paths.get(router_name).cloned(),
-                tls: *router_tls.get(router_name).unwrap_or(&true),
             });
         }
     }

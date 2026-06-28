@@ -45,6 +45,31 @@ enum Commands {
     Init,
     /// 列出所有应用及其状态
     List,
+    /// 启动应用
+    Start {
+        /// 应用名称
+        app: String,
+    },
+    /// 停止应用
+    Stop {
+        /// 应用名称
+        app: String,
+    },
+    /// 重启应用
+    Restart {
+        /// 应用名称
+        app: String,
+    },
+    /// 拉取应用的最新镜像
+    Pull {
+        /// 应用名称
+        app: String,
+    },
+    /// 构建应用镜像
+    Build {
+        /// 应用名称
+        app: String,
+    },
     /// 查看应用详细配置
     Show {
         /// 应用名称
@@ -52,6 +77,12 @@ enum Commands {
     },
     /// 交互式添加新应用
     Add {
+        /// 创建后自动启动
+        #[arg(long)]
+        start: bool,
+    },
+    /// 交互式添加静态网站应用
+    AddStatic {
         /// 创建后自动启动
         #[arg(long)]
         start: bool,
@@ -124,6 +155,26 @@ fn run(cli: Cli) -> anyhow::Result<()> {
             let config = Config::load_or_default()?;
             commands::list::run(&config)
         }
+        Commands::Start { app } => {
+            let config = Config::load_or_default()?;
+            commands::lifecycle::run(&app, &config, "start", cli.commit, cli.no_git)
+        }
+        Commands::Stop { app } => {
+            let config = Config::load_or_default()?;
+            commands::lifecycle::run(&app, &config, "stop", cli.commit, cli.no_git)
+        }
+        Commands::Restart { app } => {
+            let config = Config::load_or_default()?;
+            commands::lifecycle::run(&app, &config, "restart", cli.commit, cli.no_git)
+        }
+        Commands::Pull { app } => {
+            let config = Config::load_or_default()?;
+            commands::lifecycle::run(&app, &config, "pull", cli.commit, cli.no_git)
+        }
+        Commands::Build { app } => {
+            let config = Config::load_or_default()?;
+            commands::lifecycle::run(&app, &config, "build", cli.commit, cli.no_git)
+        }
         Commands::Show { app } => {
             let config = Config::load_or_default()?;
             commands::show::run(&app, &config)
@@ -131,6 +182,10 @@ fn run(cli: Cli) -> anyhow::Result<()> {
         Commands::Add { start } => {
             let config = Config::load_or_default()?;
             commands::add::run(&config, cli.commit, cli.no_git, start)
+        }
+        Commands::AddStatic { start } => {
+            let config = Config::load_or_default()?;
+            commands::add_static::run(&config, cli.commit, cli.no_git, start)
         }
         Commands::Edit { app } => {
             let config = Config::load_or_default()?;

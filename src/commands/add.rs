@@ -375,15 +375,9 @@ fn configure_routes(
             }
         };
 
-        let tls = Confirm::new()
-            .with_prompt("启用 TLS?")
-            .default(true)
-            .interact()?;
-
         routes.push(TraefikRoute {
             subdomain,
             path_prefix,
-            tls,
         });
     }
 

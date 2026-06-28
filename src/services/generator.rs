@@ -400,24 +400,23 @@ fn build_traefik_labels(svc: &Service, app: &App, config: &Config) -> Vec<String
             router_name
         ));
 
-        if route.tls {
-            labels.push(format!(
-                "traefik.http.routers.{}.tls=true",
-                router_name
-            ));
-            labels.push(format!(
-                "traefik.http.routers.{}.tls.certresolver=cloudflare",
-                router_name
-            ));
-            labels.push(format!(
-                "traefik.http.routers.{}.tls.domains[0].main={}",
-                router_name, config.home.domain
-            ));
-            labels.push(format!(
-                "traefik.http.routers.{}.tls.domains[0].sans=*.{}",
-                router_name, config.home.domain
-            ));
-        }
+        // TLS 始终启用
+        labels.push(format!(
+            "traefik.http.routers.{}.tls=true",
+            router_name
+        ));
+        labels.push(format!(
+            "traefik.http.routers.{}.tls.certresolver=cloudflare",
+            router_name
+        ));
+        labels.push(format!(
+            "traefik.http.routers.{}.tls.domains[0].main={}",
+            router_name, config.home.domain
+        ));
+        labels.push(format!(
+            "traefik.http.routers.{}.tls.domains[0].sans=*.{}",
+            router_name, config.home.domain
+        ));
 
         // 文件中间件
         if !svc.middlewares.is_empty() {
@@ -556,6 +555,19 @@ fn build_healthcheck(svc: &Service) -> Option<ComposeHealthCheck> {
                 "CMD".to_string(),
                 "redis-cli".to_string(),
                 "ping".to_string(),
+            ]),
+            interval: Some("10s".to_string()),
+            timeout: Some("5s".to_string()),
+            retries: Some(3),
+            start_period: Some("10s".to_string()),
+        });
+    }
+
+    if image_lower.contains("nginx") {
+        return Some(ComposeHealthCheck {
+            test: Some(vec![
+                "CMD-SHELL".to_string(),
+                "wget -q -O /dev/null http://localhost:80/ || exit 1".to_string(),
             ]),
             interval: Some("10s".to_string()),
             timeout: Some("5s".to_string()),

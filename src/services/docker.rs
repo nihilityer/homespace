@@ -94,6 +94,57 @@ pub fn compose_stop(app_dir: &Path) -> anyhow::Result<()> {
     Ok(())
 }
 
+/// 执行 docker compose restart
+pub fn compose_restart(app_dir: &Path) -> anyhow::Result<()> {
+    let status = Command::new("docker")
+        .args(["compose", "-f"])
+        .arg(app_dir.join(COMPOSE_FILE))
+        .args(["restart"])
+        .status()
+        .with_context(|| {
+            format!("无法重启 docker compose: {}", app_dir.display())
+        })?;
+
+    if !status.success() {
+        anyhow::bail!("docker compose restart 执行失败");
+    }
+    Ok(())
+}
+
+/// 执行 docker compose pull
+pub fn compose_pull(app_dir: &Path) -> anyhow::Result<()> {
+    let status = Command::new("docker")
+        .args(["compose", "-f"])
+        .arg(app_dir.join(COMPOSE_FILE))
+        .args(["pull"])
+        .status()
+        .with_context(|| {
+            format!("无法执行 docker compose pull: {}", app_dir.display())
+        })?;
+
+    if !status.success() {
+        anyhow::bail!("docker compose pull 执行失败");
+    }
+    Ok(())
+}
+
+/// 执行 docker compose build
+pub fn compose_build(app_dir: &Path) -> anyhow::Result<()> {
+    let status = Command::new("docker")
+        .args(["compose", "-f"])
+        .arg(app_dir.join(COMPOSE_FILE))
+        .args(["build"])
+        .status()
+        .with_context(|| {
+            format!("无法执行 docker compose build: {}", app_dir.display())
+        })?;
+
+    if !status.success() {
+        anyhow::bail!("docker compose build 执行失败");
+    }
+    Ok(())
+}
+
 /// 执行 docker compose ps (JSON)
 #[allow(dead_code)]
 pub fn compose_ps_json(app_dir: &Path) -> anyhow::Result<String> {

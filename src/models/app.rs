@@ -67,8 +67,6 @@ pub struct TraefikRoute {
     pub subdomain: String,
     /// URL 路径前缀
     pub path_prefix: Option<String>,
-    /// 启用 TLS
-    pub tls: bool,
 }
 
 /// 端口映射
