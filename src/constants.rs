@@ -45,8 +45,8 @@ pub const TLS_CONFIG_FILE: &str = "tls.toml";
 pub const NGINX_SITE_DIR: &str = "site";
 /// Nginx 配置文件名
 pub const NGINX_CONF_FILE: &str = "nginx.conf";
-/// 静态站点默认 nginx 镜像
-pub const NGINX_IMAGE: &str = "nginx:alpine";
+/// 静态站点默认 nginx 镜像（版本由生成器指定）
+pub const NGINX_IMAGE: &str = "nginx";
 
 // ── homespace 配置 ──
 /// homespace 配置目录

@@ -92,6 +92,13 @@ enum Commands {
         /// 应用名称
         app: String,
     },
+    /// 升级应用镜像版本
+    Upgrade {
+        /// 应用名称
+        app: String,
+        /// 指定服务名（不指定则升级全部）
+        service: Option<String>,
+    },
     /// 移除应用
     Remove {
         /// 应用名称
@@ -190,6 +197,10 @@ fn run(cli: Cli) -> anyhow::Result<()> {
         Commands::Edit { app } => {
             let config = Config::load_or_default()?;
             commands::edit::run(&app, &config, cli.commit, cli.no_git)
+        }
+        Commands::Upgrade { app, service } => {
+            let config = Config::load_or_default()?;
+            commands::upgrade::run(&app, service.as_deref(), &config)
         }
         Commands::Remove {
             app,

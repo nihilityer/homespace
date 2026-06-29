@@ -79,13 +79,22 @@ pub fn run(app_name: &str, config: &Config, commit: bool, no_git: bool) -> anyho
 
                 let mut svc = app.services[svc_idx].clone();
 
-                info!("当前镜像: {}", svc.image);
+                info!("当前镜像: {}:{}", svc.image, svc.version);
                 let new_image: String = Input::new()
-                    .with_prompt("新镜像 (回车保持不变)")
+                    .with_prompt("新镜像名 (回车保持不变)")
                     .allow_empty(true)
                     .interact_text()?;
                 if !new_image.is_empty() {
                     svc.image = new_image;
+                    modified = true;
+                }
+
+                let new_version: String = Input::new()
+                    .with_prompt(format!("新版本 (当前: {}) (回车保持不变)", svc.version))
+                    .allow_empty(true)
+                    .interact_text()?;
+                if !new_version.is_empty() {
+                    svc.version = new_version;
                     modified = true;
                 }
 

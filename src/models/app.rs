@@ -24,8 +24,10 @@ pub struct App {
 pub struct Service {
     /// 服务名
     pub name: String,
-    /// Docker 镜像
+    /// Docker 镜像名（不含 tag），如 `"library/alpine"`、`"nginx"`
     pub image: String,
+    /// 镜像版本 tag，如 `"latest"`、`"v3.7.5"`、`"16.14"`
+    pub version: String,
     /// 容器启动命令，覆盖镜像默认 CMD。`None` 表示使用镜像默认命令
     pub command: Option<Vec<String>>,
     /// 内部端口列表

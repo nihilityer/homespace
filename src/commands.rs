@@ -14,6 +14,8 @@ pub mod list;
 pub mod remove;
 /// 管理共享资源目录
 pub mod resource;
+/// 升级应用镜像版本
+pub mod upgrade;
 /// 查看应用详细配置
 pub mod show;
 /// 检查基础设施状态

@@ -86,8 +86,13 @@ pub fn run(config: &Config, commit: bool, no_git: bool, start: bool) -> anyhow::
             .interact_text()?;
 
         let image: String = Input::new()
-            .with_prompt("Docker 镜像")
-            .with_initial_text("library/alpine:latest")
+            .with_prompt("Docker 镜像名 (不含 tag)")
+            .with_initial_text("library/alpine")
+            .interact_text()?;
+
+        let version: String = Input::new()
+            .with_prompt("镜像版本 tag")
+            .with_initial_text("latest")
             .interact_text()?;
 
         // 网络模式
@@ -134,6 +139,7 @@ pub fn run(config: &Config, commit: bool, no_git: bool, start: bool) -> anyhow::
         services.push(Service {
             name: svc_name,
             image,
+            version,
             command,
             internal_ports,
             network_mode,
@@ -647,7 +653,7 @@ fn print_summary(app: &App, config: &Config) {
 
     for svc in &app.services {
         info!("  ┌─ Service: {}", svc.name);
-        info!("  │  镜像: {}", svc.image);
+        info!("  │  镜像: {}:{}", svc.image, svc.version);
         if !svc.internal_ports.is_empty() {
             let p: Vec<String> = svc.internal_ports.iter().map(|n| n.to_string()).collect();
             info!("  │  端口: {}", p.join(", "));

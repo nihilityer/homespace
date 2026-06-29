@@ -136,7 +136,8 @@ fn parse_compose_service(
     app_dir: &std::path::Path,
     config: &Config,
 ) -> Service {
-    let image = svc.image.clone().unwrap_or_default();
+    let var_prefix = name.to_uppercase().replace('-', "_");
+    let (image, version) = resolve_image_and_version(name, svc, app_dir, &var_prefix);
 
     // 解析端口
     let (internal_ports, port_mappings) = parse_ports(svc);
@@ -159,6 +160,7 @@ fn parse_compose_service(
     Service {
         name: name.to_string(),
         image,
+        version,
         command: svc.command.clone(),
         internal_ports,
         network_mode,
@@ -169,6 +171,59 @@ fn parse_compose_service(
         env_vars: HashMap::new(),
         database,
         middlewares,
+    }
+}
+
+/// 从 compose 文件和 .env 中解析镜像名和版本。
+///
+/// 若 compose 中为 env-var 引用（如 `${SVC_IMAGE}:${SVC_VERSION}`），
+/// 则从 .env 文件中读取对应的值拆分得到。
+fn resolve_image_and_version(
+    _svc_name: &str,
+    svc: &ComposeService,
+    app_dir: &std::path::Path,
+    var_prefix: &str,
+) -> (String, String) {
+    let raw = svc.image.clone().unwrap_or_default();
+
+    // 尝试从 .env 读取拆分后的值
+    let env_file = app_dir.join(ENV_FILE);
+    if env_file.exists() {
+        if let Ok(content) = std::fs::read_to_string(&env_file) {
+            let img_key = format!("{}_IMAGE=", var_prefix);
+            let ver_key = format!("{}_VERSION=", var_prefix);
+
+            let env_image = content
+                .lines()
+                .find(|l| l.trim().starts_with(&img_key))
+                .and_then(|l| l.split_once('=').map(|x| x.1))
+                .map(|v| v.trim().trim_matches('"').trim_matches('\'').to_string());
+
+            let env_version = content
+                .lines()
+                .find(|l| l.trim().starts_with(&ver_key))
+                .and_then(|l| l.split_once('=').map(|x| x.1))
+                .map(|v| v.trim().trim_matches('"').trim_matches('\'').to_string());
+
+            if let (Some(img), Some(ver)) = (&env_image, &env_version) {
+                return (img.clone(), ver.clone());
+            }
+
+            // 回退：从旧格式 {PREFIX}_IMAGE=image:version 中拆分
+            if let Some(img) = &env_image {
+                if let Some((name, tag)) = img.rsplit_once(':') {
+                    return (name.to_string(), tag.to_string());
+                }
+                return (img.clone(), "latest".to_string());
+            }
+        }
+    }
+
+    // 从原始 compose image 字段拆分
+    if let Some((name, tag)) = raw.rsplit_once(':') {
+        (name.to_string(), tag.to_string())
+    } else {
+        (raw, "latest".to_string())
     }
 }
 

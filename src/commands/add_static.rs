@@ -294,6 +294,7 @@ fn build_static_app(
         services: vec![Service {
             name: app_name.to_string(),
             image: NGINX_IMAGE.to_string(),
+            version: "alpine".to_string(),
             command: None,
             internal_ports: vec![80],
             network_mode: NetworkMode::Bridge,

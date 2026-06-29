@@ -99,6 +99,7 @@ fn generate_env(app: &App, config: &Config, _example: bool) -> anyhow::Result<St
         let var_prefix = svc.name.to_uppercase().replace('-', "_");
 
         buf.push_str(&format!("{}_IMAGE={}\n", var_prefix, svc.image));
+        buf.push_str(&format!("{}_VERSION={}\n", var_prefix, svc.version));
 
         if !svc.internal_ports.is_empty() {
             let ports_str = svc
@@ -175,8 +176,8 @@ fn generate_readme(app: &App, _config: &Config) -> anyhow::Result<String> {
         };
 
         buf.push_str(&format!(
-            "| {} | {} | {} | {} | {} |\n",
-            svc.name, svc.image, ports, routes, db
+            "| {} | {}:{} | {} | {} | {} |\n",
+            svc.name, svc.image, svc.version, ports, routes, db
         ));
     }
 
@@ -293,7 +294,7 @@ fn build_service(
     let healthcheck = build_healthcheck(svc);
 
     ComposeService {
-        image: Some(svc.image.clone()),
+        image: Some(format!("${{{}_IMAGE}}:${{{}_VERSION}}", var_prefix, var_prefix)),
         container_name: Some(container_name),
         command: svc.command.clone(),
         restart: Some("unless-stopped".to_string()),
