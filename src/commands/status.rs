@@ -46,12 +46,11 @@ pub fn run(config: &Config) -> anyhow::Result<()> {
         info!("  证书目录: {} ✅", ssl_path.display());
         // 检查 acme.json
         let acme_path = ssl_path.join("acme.json");
-        if acme_path.exists() {
-            if let Ok(meta) = std::fs::metadata(&acme_path) {
+        if acme_path.exists()
+            && let Ok(meta) = std::fs::metadata(&acme_path) {
                 info!("  acme.json: {} bytes", meta.len());
                 info!("  ⚠️  证书到期时间需手动检查 (acme.json 为 Traefik 内部格式)");
             }
-        }
     } else {
         info!("  ⚠️  证书目录未找到: {}", ssl_path.display());
     }
@@ -68,8 +67,7 @@ pub fn run(config: &Config) -> anyhow::Result<()> {
             .arg(&traefik_compose)
             .args(["ps", "--format", "table {{.Name}}\t{{.Status}}"])
             .output()
-        {
-            if output.status.success() {
+            && output.status.success() {
                 let stdout = String::from_utf8_lossy(&output.stdout);
                 if !stdout.trim().is_empty() {
                     info!("\n  容器状态:");
@@ -78,7 +76,6 @@ pub fn run(config: &Config) -> anyhow::Result<()> {
                     }
                 }
             }
-        }
     } else {
         info!("  ❌ 文件不存在，infra 可能未部署");
     }

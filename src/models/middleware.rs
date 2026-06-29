@@ -12,7 +12,7 @@ use serde::{Deserialize, Serialize};
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "kebab-case")]
 pub enum Middleware {
-    /// GZip 压缩 — 对 HTTP 响应内容进行 gzip 压缩，减少传输数据量。
+    /// `GZip` 压缩 — 对 HTTP 响应内容进行 gzip 压缩，减少传输数据量。
     Gzip,
     /// HTTP → HTTPS 重定向 — 将所有 HTTP 请求 301 重定向到 HTTPS。
     #[serde(rename = "redir-https")]
@@ -36,7 +36,7 @@ impl Middleware {
     ///
     /// 该名称同时也是 YAML 文件中 `http.middlewares.<name>` 的键名。
     #[must_use]
-    pub fn name(self) -> &'static str {
+    pub const fn name(self) -> &'static str {
         match self {
             Self::Gzip => "gzip",
             Self::RedirectHttps => "redir-https",
@@ -59,7 +59,7 @@ impl Middleware {
     /// 存放于 `infra/traefik/config/` 目录下。
     /// 文件名保持向后兼容，与最初 `infra_generator` 生成的名称一致。
     #[must_use]
-    pub fn filename(self) -> &'static str {
+    pub const fn filename(self) -> &'static str {
         match self {
             Self::Gzip => "middleware-gzip.yml",
             Self::RedirectHttps => "middleware-redir-https.yml",
@@ -73,7 +73,7 @@ impl Middleware {
     ///
     /// 内容可直接写入磁盘，无需额外处理。
     #[must_use]
-    pub fn yaml_content(self) -> &'static str {
+    pub const fn yaml_content(self) -> &'static str {
         match self {
             Self::Gzip => MIDDLEWARE_GZIP,
             Self::RedirectHttps => MIDDLEWARE_REDIR_HTTPS,
@@ -88,7 +88,7 @@ impl Middleware {
     /// 返回 `false` 的中间件仅用于 Traefik 自身（如 Dashboard 认证），
     /// 不会在 `homespace add` 的中间件选择列表中展示。
     #[must_use]
-    pub fn app_applicable(self) -> bool {
+    pub const fn app_applicable(self) -> bool {
         !matches!(self, Self::DashboardAuth | Self::RedirectHttps)
     }
 
@@ -135,7 +135,7 @@ impl Middleware {
 
 // ── YAML 内容常量 ────────────────────────────────────────────────
 
-/// GZip 压缩中间件 YAML 内容
+/// `GZip` 压缩中间件 YAML 内容
 const MIDDLEWARE_GZIP: &str = r#"# GZip 压缩 — 对响应内容进行 gzip 压缩
 http:
   middlewares:

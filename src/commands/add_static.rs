@@ -17,86 +17,10 @@ pub fn run(config: &Config, commit: bool, no_git: bool, start: bool) -> anyhow::
 
     let existing_apps = scanner::scan_apps(config).unwrap_or_default();
 
-    // 1.1 应用名称
-    let app_name: String = Input::new()
-        .with_prompt("应用名称 (kebab-case)")
-        .validate_with(|input: &String| {
-            if input.is_empty() {
-                Err("名称不能为空")
-            } else if input.contains(' ') {
-                Err("名称不能包含空格，请使用 kebab-case")
-            } else if config.paths.apps_root.join(input).exists() {
-                Err("该目录已存在")
-            } else {
-                Ok(())
-            }
-        })
-        .interact_text()?;
-
-    // 1.2 压缩包路径
-    let archive_path_str: String = Input::new()
-        .with_prompt("静态网站压缩包路径")
-        .validate_with(|input: &String| {
-            let p = Path::new(input);
-            if !p.exists() {
-                Err("文件不存在")
-            } else if !p.is_file() {
-                Err("不是一个文件")
-            } else {
-                let fname = p
-                    .file_name()
-                    .and_then(|n| n.to_str())
-                    .unwrap_or("");
-                let supported = fname.ends_with(".zip")
-                    || fname.ends_with(".tar.gz")
-                    || fname.ends_with(".tgz")
-                    || fname.ends_with(".tar.bz2")
-                    || fname.ends_with(".tar.xz");
-                if supported {
-                    Ok(())
-                } else {
-                    Err("不支持的格式，支持: .zip, .tar.gz, .tgz, .tar.bz2, .tar.xz")
-                }
-            }
-        })
-        .interact_text()?;
-    let archive_path = PathBuf::from(&archive_path_str);
-
-    // 1.3 子域名
-    let default_domain = format!("{}.{}", app_name, config.home.domain);
-
-    let domain: String = Input::new()
-        .with_prompt("子域名")
-        .with_initial_text(&default_domain)
-        .validate_with(|input: &String| {
-            if input.is_empty() {
-                Err("域名不能为空".to_string())
-            } else if let Some(conflict) =
-                scanner::check_domain_conflict(input, &existing_apps)
-            {
-                Err(format!("域名冲突: {}", conflict))
-            } else {
-                Ok(())
-            }
-        })
-        .interact_text()?;
-
-    // 1.4 自定义 nginx 配置
-    let custom_nginx: Option<PathBuf> = {
-        let path_str: String = Input::new()
-            .with_prompt("自定义 nginx 配置文件路径 (可选，回车跳过)")
-            .allow_empty(true)
-            .interact_text()?;
-        if path_str.is_empty() {
-            None
-        } else {
-            let p = PathBuf::from(&path_str);
-            if !p.exists() || !p.is_file() {
-                anyhow::bail!("自定义 nginx 配置文件不存在: {}", path_str);
-            }
-            Some(p)
-        }
-    };
+    let app_name = collect_app_name(config)?;
+    let archive_path = collect_archive_path()?;
+    let domain = collect_domain(config, &app_name, &existing_apps)?;
+    let custom_nginx = collect_custom_nginx()?;
 
     // ===== 第二步：创建目录并解压 =====
     info!("\n📁 创建应用目录并提取文件...");
@@ -159,6 +83,96 @@ pub fn run(config: &Config, commit: bool, no_git: bool, start: bool) -> anyhow::
 }
 
 // ── 交互辅助函数 ──
+
+/// 收集应用名称输入
+fn collect_app_name(config: &Config) -> anyhow::Result<String> {
+    Input::new()
+        .with_prompt("应用名称 (kebab-case)")
+        .validate_with(|input: &String| {
+            if input.is_empty() {
+                Err("名称不能为空")
+            } else if input.contains(' ') {
+                Err("名称不能包含空格，请使用 kebab-case")
+            } else if config.paths.apps_root.join(input).exists() {
+                Err("该目录已存在")
+            } else {
+                Ok(())
+            }
+        })
+        .interact_text()
+        .context("读取应用名称失败")
+}
+
+/// 收集压缩包路径输入
+fn collect_archive_path() -> anyhow::Result<PathBuf> {
+    let path_str: String = Input::new()
+        .with_prompt("静态网站压缩包路径")
+        .validate_with(|input: &String| {
+            let p = Path::new(input);
+            if !p.exists() {
+                Err("文件不存在")
+            } else if !p.is_file() {
+                Err("不是一个文件")
+            } else {
+                let fname = p
+                    .file_name()
+                    .and_then(|n| n.to_str())
+                    .unwrap_or("");
+                let supported = fname.ends_with(".zip")
+                    || fname.ends_with(".tar.gz")
+                    || fname.ends_with(".tgz")
+                    || fname.ends_with(".tar.bz2")
+                    || fname.ends_with(".tar.xz");
+                if supported {
+                    Ok(())
+                } else {
+                    Err("不支持的格式，支持: .zip, .tar.gz, .tgz, .tar.bz2, .tar.xz")
+                }
+            }
+        })
+        .interact_text()
+        .context("读取压缩包路径失败")?;
+    Ok(PathBuf::from(&path_str))
+}
+
+/// 收集子域名输入
+fn collect_domain(config: &Config, app_name: &str, existing_apps: &[App]) -> anyhow::Result<String> {
+    let default_domain = format!("{}.{}", app_name, config.home.domain);
+    Input::new()
+        .with_prompt("子域名")
+        .with_initial_text(&default_domain)
+        .validate_with(|input: &String| {
+            if input.is_empty() {
+                Err("域名不能为空".to_string())
+            } else if let Some(conflict) =
+                scanner::check_domain_conflict(input, existing_apps)
+            {
+                Err(format!("域名冲突: {}", conflict))
+            } else {
+                Ok(())
+            }
+        })
+        .interact_text()
+        .context("读取域名失败")
+}
+
+/// 收集自定义 nginx 配置文件路径
+fn collect_custom_nginx() -> anyhow::Result<Option<PathBuf>> {
+    let path_str: String = Input::new()
+        .with_prompt("自定义 nginx 配置文件路径 (可选，回车跳过)")
+        .allow_empty(true)
+        .interact_text()
+        .context("读取 nginx 配置路径失败")?;
+    if path_str.is_empty() {
+        Ok(None)
+    } else {
+        let p = PathBuf::from(&path_str);
+        if !p.exists() || !p.is_file() {
+            anyhow::bail!("自定义 nginx 配置文件不存在: {}", path_str);
+        }
+        Ok(Some(p))
+    }
+}
 
 /// 判断压缩包格式并解压到目标目录
 fn extract_archive(archive_path: &Path, target_dir: &Path) -> anyhow::Result<()> {

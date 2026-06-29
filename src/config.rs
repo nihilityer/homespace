@@ -135,12 +135,12 @@ impl Config {
         self.paths.apps_root.join(TRAEFIK_DIR).join(COMPOSE_FILE)
     }
 
-    /// PostgreSQL 的 docker-compose.yml 路径
+    /// `PostgreSQL` 的 docker-compose.yml 路径
     pub fn postgres_compose_path(&self) -> PathBuf {
         self.paths.apps_root.join(POSTGRES_DIR).join(COMPOSE_FILE)
     }
 
-    /// PostgreSQL 的 .env 路径
+    /// `PostgreSQL` 的 .env 路径
     pub fn postgres_env_path(&self) -> PathBuf {
         self.paths
             .apps_root

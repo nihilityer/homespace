@@ -1,8 +1,8 @@
-use tracing::info;
 use crate::config::Config;
+use crate::constants::*;
 use crate::models::app::{
-    App, DatabaseConfig, NetworkMode, PortMapping, PortProtocol, Service,
-    SharedResourceMount, TraefikRoute, Volume,
+    App, DatabaseConfig, NetworkMode, PortMapping, PortProtocol, Service, SharedResourceMount,
+    TraefikRoute, Volume,
 };
 use crate::models::middleware::Middleware;
 use crate::services::database;
@@ -13,7 +13,7 @@ use crate::services::scanner;
 use dialoguer::{Confirm, Input, MultiSelect, Select};
 use std::collections::HashMap;
 use std::path::PathBuf;
-use crate::constants::*;
+use tracing::info;
 
 /// 交互式添加新应用的主入口
 #[allow(clippy::cognitive_complexity)]
@@ -133,8 +133,7 @@ pub fn run(config: &Config, commit: bool, no_git: bool, start: bool) -> anyhow::
         let database = configure_database(&svc_name)?;
 
         // ===== 第六层：持久化与配置 =====
-        let (volumes, shared_mounts, env_vars) =
-            configure_storage(config)?;
+        let (volumes, shared_mounts, env_vars) = configure_storage(config)?;
 
         services.push(Service {
             name: svc_name,
@@ -191,33 +190,29 @@ pub fn run(config: &Config, commit: bool, no_git: bool, start: bool) -> anyhow::
             user,
             auto_create,
         } = &svc.database
+            && *auto_create
         {
-            if *auto_create {
-                info!("\n🗄️  创建数据库...");
-                let password = database::generate_password(20);
-                let admin_user =
-                    database::read_infra_pg_user(&config.postgres_env_path()).unwrap_or_else(|_| {
-                        "admin".to_string()
-                    });
-                let admin_password =
-                    database::read_infra_pg_password(&config.postgres_env_path())?;
-                let admin_db = database::read_infra_pg_db(&config.postgres_env_path());
+            info!("\n🗄️  创建数据库...");
+            let password = database::generate_password(20);
+            let admin_user = database::read_infra_pg_user(&config.postgres_env_path())
+                .unwrap_or_else(|_| "admin".to_string());
+            let admin_password = database::read_infra_pg_password(&config.postgres_env_path())?;
+            let admin_db = database::read_infra_pg_db(&config.postgres_env_path());
 
-                database::create_database_and_user(
-                    db_name,
-                    user,
-                    &password,
-                    NETWORK_POSTGRES,
-                    &admin_user,
-                    &admin_password,
-                    &admin_db,
-                )?;
+            database::create_database_and_user(
+                db_name,
+                user,
+                &password,
+                NETWORK_POSTGRES,
+                &admin_user,
+                &admin_password,
+                &admin_db,
+            )?;
 
-                info!("  ✅ 数据库 {} 已创建", db_name);
-                info!("  ✅ 用户 {} 已创建", user);
-                info!("  🔑 密码: {} (请妥善保存)", password);
-                info!("  ⚠️  密码已写入 .env 文件");
-            }
+            info!("  ✅ 数据库 {} 已创建", db_name);
+            info!("  ✅ 用户 {} 已创建", user);
+            info!("  🔑 密码: {} (请妥善保存)", password);
+            info!("  ⚠️  密码已写入 .env 文件");
         }
     }
 
@@ -421,9 +416,7 @@ fn configure_port_mappings(existing_apps: &[App]) -> anyhow::Result<Vec<PortMapp
             })
             .interact_text()?;
 
-        let container_port: u16 = Input::new()
-            .with_prompt("容器端口")
-            .interact_text()?;
+        let container_port: u16 = Input::new().with_prompt("容器端口").interact_text()?;
 
         let protocol = {
             let options = &["tcp", "udp"];
@@ -451,8 +444,8 @@ fn configure_port_mappings(existing_apps: &[App]) -> anyhow::Result<Vec<PortMapp
 
 /// 交互式配置数据库连接方式。
 ///
-/// 两步决策：先确认是否需要数据库，再确认是否使用 infra 共享 PostgreSQL。
-/// 不使用 infra 时，数据库由应用镜像自行处理，不在此建模。
+/// 两步决策：先确认是否需要数据库，再确认是否使用 `infra` 共享 `PostgreSQL`。
+/// 不使用 `infra` 时，数据库由应用镜像自行处理，不在此建模。
 fn configure_database(svc_name: &str) -> anyhow::Result<DatabaseConfig> {
     let need_db = Confirm::new()
         .with_prompt("是否需要数据库?")
@@ -497,7 +490,11 @@ fn configure_database(svc_name: &str) -> anyhow::Result<DatabaseConfig> {
 #[allow(clippy::type_complexity)]
 fn configure_storage(
     config: &Config,
-) -> anyhow::Result<(Vec<Volume>, Vec<SharedResourceMount>, HashMap<String, String>)> {
+) -> anyhow::Result<(
+    Vec<Volume>,
+    Vec<SharedResourceMount>,
+    HashMap<String, String>,
+)> {
     let mut volumes = Vec::new();
     let mut shared_mounts = Vec::new();
     let mut env_vars = HashMap::new();
@@ -534,10 +531,7 @@ fn configure_storage(
                 let res = &resources[idx];
 
                 let container_path: String = Input::new()
-                    .with_prompt(format!(
-                        "资源 {} 在容器内的挂载点",
-                        res.name
-                    ))
+                    .with_prompt(format!("资源 {} 在容器内的挂载点", res.name))
                     .with_initial_text(format!("/{}", res.name))
                     .interact_text()?;
 
@@ -592,9 +586,7 @@ fn configure_storage(
                 break;
             }
 
-            let container_path: String = Input::new()
-                .with_prompt("容器内路径")
-                .interact_text()?;
+            let container_path: String = Input::new().with_prompt("容器内路径").interact_text()?;
 
             let read_only = Confirm::new()
                 .with_prompt("是否只读?")
@@ -667,7 +659,10 @@ fn print_summary(app: &App, config: &Config) {
             info!("  │  🌐 https://{}", route.subdomain);
         }
         for pm in &svc.port_mappings {
-            info!("  │  📡 {}:{}/{:?}", pm.host_port, pm.container_port, pm.protocol);
+            info!(
+                "  │  📡 {}:{}/{:?}",
+                pm.host_port, pm.container_port, pm.protocol
+            );
         }
         match &svc.database {
             DatabaseConfig::None => {}
@@ -676,7 +671,10 @@ fn print_summary(app: &App, config: &Config) {
             }
         }
         for mount in &svc.shared_mounts {
-            info!("  │  📁 [{}] → {}", mount.resource_name, mount.container_path);
+            info!(
+                "  │  📁 [{}] → {}",
+                mount.resource_name, mount.container_path
+            );
         }
         if !svc.middlewares.is_empty() {
             let mw_names: Vec<&str> = svc.middlewares.iter().map(|m| m.name()).collect();

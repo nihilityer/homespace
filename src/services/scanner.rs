@@ -117,11 +117,10 @@ pub fn parse_app(dir: &std::path::Path, config: &Config) -> anyhow::Result<App> 
             if let Some(value) = parse_env_var(line, "DATA_ROOT") {
                 app.data_root = Some(PathBuf::from(value));
             }
-            if app.description.is_empty() {
-                if let Some(desc) = parse_env_var(line, "APP_DESCRIPTION") {
+            if app.description.is_empty()
+                && let Some(desc) = parse_env_var(line, "APP_DESCRIPTION") {
                     app.description = desc;
                 }
-            }
         }
     }
 
@@ -188,8 +187,8 @@ fn resolve_image_and_version(
 
     // 尝试从 .env 读取拆分后的值
     let env_file = app_dir.join(ENV_FILE);
-    if env_file.exists() {
-        if let Ok(content) = std::fs::read_to_string(&env_file) {
+    if env_file.exists()
+        && let Ok(content) = std::fs::read_to_string(&env_file) {
             let img_key = format!("{}_IMAGE=", var_prefix);
             let ver_key = format!("{}_VERSION=", var_prefix);
 
@@ -217,7 +216,6 @@ fn resolve_image_and_version(
                 return (img.clone(), "latest".to_string());
             }
         }
-    }
 
     // 从原始 compose image 字段拆分
     if let Some((name, tag)) = raw.rsplit_once(':') {
@@ -236,8 +234,8 @@ fn parse_ports(svc: &ComposeService) -> (Vec<u16>, Vec<PortMapping>) {
         for port_str in ports {
             // 格式: "8080:80" 或 "8080:80/tcp"
             let parts: Vec<&str> = port_str.splitn(2, ':').collect();
-            if parts.len() == 2 {
-                if let Ok(host_port) = parts[0].parse::<u16>() {
+            if parts.len() == 2
+                && let Ok(host_port) = parts[0].parse::<u16>() {
                     let container_part = if let Some(stripped) = parts[1].strip_suffix("/udp") {
                         internal.push(stripped.parse().unwrap_or(0));
                         mappings.push(PortMapping {
@@ -260,7 +258,6 @@ fn parse_ports(svc: &ComposeService) -> (Vec<u16>, Vec<PortMapping>) {
                         protocol: PortProtocol::Tcp,
                     });
                 }
-            }
         }
     }
 
@@ -275,11 +272,10 @@ fn parse_network_mode(svc: &ComposeService) -> NetworkMode {
             "bridge" => return NetworkMode::Bridge,
             other => {
                 // 检查 networks 字段中引用的外部网络
-                if let Some(ref networks) = svc.networks {
-                    if networks.contains_key(other) {
+                if let Some(ref networks) = svc.networks
+                    && networks.contains_key(other) {
                         return NetworkMode::External(other.to_string());
                     }
-                }
                 return NetworkMode::External(other.to_string());
             }
         }
@@ -312,19 +308,16 @@ fn parse_traefik_routes(svc: &ComposeService, _app_name: &str) -> Vec<TraefikRou
                     let router_name = &key[..pos];
                     let property = &key[pos + 1..];
 
-                    match property {
-                        "rule" => {
-                            // 提取 Host(...) 部分
-                            if let Some(host) = extract_host(value) {
-                                router_hosts.insert(router_name.to_string(), host);
-                            }
-                            // 检查是否有 PathPrefix
-                            if let Some(path) = extract_path_prefix(value) {
-                                router_paths
-                                    .insert(router_name.to_string(), path);
-                            }
+                    if property == "rule" {
+                        // 提取 Host(...) 部分
+                        if let Some(host) = extract_host(value) {
+                            router_hosts.insert(router_name.to_string(), host);
                         }
-                        _ => {}
+                        // 检查是否有 PathPrefix
+                        if let Some(path) = extract_path_prefix(value) {
+                            router_paths
+                                .insert(router_name.to_string(), path);
+                        }
                     }
                 }
             }
@@ -398,11 +391,10 @@ fn parse_middlewares(svc: &ComposeService, _app_name: &str) -> Vec<Middleware> {
 
             for part in value.split(',') {
                 let part = part.trim();
-                if let Some(mw) = Middleware::from_name(part) {
-                    if !result.contains(&mw) {
+                if let Some(mw) = Middleware::from_name(part)
+                    && !result.contains(&mw) {
                         result.push(mw);
                     }
-                }
             }
         }
     }
@@ -444,18 +436,17 @@ fn parse_volumes(svc: &ComposeService, _app_dir: &std::path::Path, _config: &Con
 
 /// 推断容器使用的数据库配置。
 ///
-/// 仅通过 `postgres` 网络检测 infra 共享 PostgreSQL 连接；
+/// 仅通过 `postgres` 网络检测 infra 共享 `PostgreSQL` 连接；
 /// 应用自带数据库由镜像自行处理，不在此建模。
 fn infer_database_config(svc: &ComposeService, _name: &str) -> DatabaseConfig {
-    if let Some(ref networks) = svc.networks {
-        if networks.contains_key(NETWORK_POSTGRES) {
+    if let Some(ref networks) = svc.networks
+        && networks.contains_key(NETWORK_POSTGRES) {
             return DatabaseConfig::SharedPostgres {
                 db_name: String::new(),
                 user: String::new(),
                 auto_create: false,
             };
         }
-    }
 
     DatabaseConfig::None
 }
